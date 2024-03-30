@@ -1,3 +1,18 @@
+# Function to set Explorer settings
+function Set-ExplorerSettings {
+    # Open default Explorer to This PC
+    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1
+
+    # Disable showing recently used files in Quick access
+    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowRecent" -Value 0
+
+    # Disable showing frequently used folders in Quick access
+    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowFrequent" -Value 0
+}
+
+# Set Explorer settings
+Set-ExplorerSettings
+
 # Function to check if a registry value exists and matches a given data
 function Test-RegistryValue {
     param (
@@ -85,3 +100,5 @@ Write-Host "   Status:" (Test-RegistryValue -Path $startMenuPath -Name "Start_Sh
 
 Write-Host "Combine taskbar buttons when taskbar is full: Enabled"
 Write-Host "   Status:" (Test-RegistryValue -Path $taskbarPath -Name "TaskbarGlomming" -ExpectedValue 1)
+
+Write-Host "Explorer settings applied."
