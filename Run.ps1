@@ -1,3 +1,27 @@
+# Function to check if the script has been run before
+function Check-ScriptRun {
+    $scriptRunKey = "HKCU:\Software\YourCompanyName\YourScriptName"
+    if (Test-Path -Path $scriptRunKey) {
+        return $true
+    }
+    return $false
+}
+
+# Function to set the flag indicating that the script has been run
+function Set-ScriptRun {
+    $scriptRunKey = "HKCU:\Software\YourCompanyName\YourScriptName"
+    New-Item -Path $scriptRunKey -Force | Out-Null
+}
+
+# Prompt for confirmation before executing the script again
+if (Check-ScriptRun) {
+    $confirmation = Read-Host "The script has already been run once. Running it again will make changes to your system settings. Do you want to continue? (Y/N)"
+    if ($confirmation -ne "Y") {
+        Write-Host "Script execution aborted."
+        exit
+    }
+}
+
 # Function to check if a registry value exists and matches a given data
 function Test-RegistryValue {
     param (
@@ -121,3 +145,6 @@ if ($taskbarStatus) {
 }
 
 Write-Host "Explorer settings applied."
+
+# Set the flag indicating that the script has been run
+Set-ScriptRun
