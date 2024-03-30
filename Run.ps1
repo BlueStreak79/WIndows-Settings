@@ -21,7 +21,7 @@ function Write-Status {
         [string]$Color
     )
     Write-Host -NoNewline $Message
-    Write-Host -ForegroundColor $Color " $Status"
+    Write-Host " $Status" -ForegroundColor $Color
 }
 
 # Prompt for confirmation before executing the script again
