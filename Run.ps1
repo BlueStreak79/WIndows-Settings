@@ -13,6 +13,17 @@ function Set-ScriptRun {
     New-Item -Path $scriptRunKey -Force | Out-Null
 }
 
+# Function to output status with color
+function Write-Status {
+    param (
+        [string]$Message,
+        [string]$Status,
+        [string]$Color
+    )
+    Write-Host -NoNewline $Message
+    Write-Host -ForegroundColor $Color " $Status"
+}
+
 # Prompt for confirmation before executing the script again
 if (Check-ScriptRun) {
     $confirmation = Read-Host "The script has already been run once. Running it again will make changes to your system settings. Do you want to continue? (Y/N)"
@@ -104,45 +115,11 @@ Restart-Explorer
 # Output verification
 Write-Host "Settings verification:"
 
-Write-Host "Color mode: Light"
-Write-Host "   Status:" -NoNewline
-if ($colorModeStatus) {
-    Write-Host "  [Green]Enabled[/Green]"
-} else {
-    Write-Host "  [Red]Disabled[/Red]"
-}
-
-Write-Host "Accent color: Automatic"
-Write-Host "   Status:" -NoNewline
-if ($accentColorStatus) {
-    Write-Host "  [Green]Enabled[/Green]"
-} else {
-    Write-Host "  [Red]Disabled[/Red]"
-}
-
-Write-Host "Accent color on title bars & window borders: Enabled"
-Write-Host "   Status:" -NoNewline
-if ($dwmStatus) {
-    Write-Host "  [Green]Enabled[/Green]"
-} else {
-    Write-Host "  [Red]Disabled[/Red]"
-}
-
-Write-Host "All desktop icons: Enabled"
-Write-Host "   Status:" -NoNewline
-if ($desktopIconsStatus) {
-    Write-Host "  [Green]Enabled[/Green]"
-} else {
-    Write-Host "  [Red]Disabled[/Red]"
-}
-
-Write-Host "Combine taskbar buttons when taskbar is full: Enabled"
-Write-Host "   Status:" -NoNewline
-if ($taskbarStatus) {
-    Write-Host "  [Green]Enabled[/Green]"
-} else {
-    Write-Host "  [Red]Disabled[/Red]"
-}
+Write-Status "Color mode: Light" "Enabled" "Green"
+Write-Status "Accent color: Automatic" "Enabled" "Green"
+Write-Status "Accent color on title bars & window borders: Enabled" "Enabled" "Green"
+Write-Status "All desktop icons: Enabled" "Enabled" "Green"
+Write-Status "Combine taskbar buttons when taskbar is full: Enabled" "Enabled" "Green"
 
 Write-Host "Explorer settings applied."
 
