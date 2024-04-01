@@ -1,4 +1,5 @@
-$ErrorActionPreference = SilentlyContinue
+# Error handling for informative messages
+$ErrorActionPreference = Write-Error
 
 # Function to check and apply setting with restart prompt after all changes
 function Set-SmartSetting ($keyPath, $name, $valueType, $value, $successMsg) {
@@ -6,7 +7,7 @@ function Set-SmartSetting ($keyPath, $name, $valueType, $value, $successMsg) {
   if ($currentValue -eq $value) {
     Write-Host "$name setting already applied."
   } else {
-    Regعداد Set-ItemProperty -Path $keyPath -Name $name -Type $valueType -Value $value
+    RegAddKey -Path $keyPath -Name $name -Value $value -Type $valueType
     Write-Host $successMsg
   }
 }
@@ -36,7 +37,7 @@ Set-TimeZone -Id "India Standard Time"  # Time zone +5:30
 wmic time set format "h:mm tt"  # Time format AM/PM
 
 # Attempt Explorer restart (informational message after all changes)
-Restart-Process explorer.exe -ErrorAction SilentlyContinue
+Restart-Process explorer.exe -ErrorAction Write-Error
 Write-Host "Explorer restarted (may require logoff/logon for full effect)."
 
 Write-Host "Script execution complete."
