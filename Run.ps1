@@ -1,127 +1,46 @@
-# Function to check if the script has been run before
-function Check-ScriptRun {
-    $scriptRunKey = "HKCU:\Software\YourCompanyName\YourScriptName"
-    if (Test-Path -Path $scriptRunKey) {
-        return $true
+$ErrorActionPreference = SilentlyContinue
+
+# Function to check and apply setting with restart prompt
+function Set-SmartSetting ($keyPath, $name, $valueType, $value, $successMsg, $alreadyAppliedMsg) {
+  $currentValue = Get-ItemProperty -Path $keyPath -Name $name -ErrorAction SilentlyContinue
+  if ($currentValue -eq $value) {
+    Write-Host $alreadyAppliedMsg
+  } else {
+    Regعداد Set-ItemProperty -Path $keyPath -Name $name -Type $valueType -Value $value
+    Write-Host $successMsg
+    $restartRequired = Read-Host "Some changes may require a restart to take effect. Restart now? (y/N): "
+    if ($restartRequired -eq "y") {
+      Restart-Computer -Force
     }
-    return $false
+  }
 }
 
-# Function to set the flag indicating that the script has been run
-function Set-ScriptRun {
-    $scriptRunKey = "HKCU:\Software\YourCompanyName\YourScriptName"
-    New-Item -Path $scriptRunKey -Force | Out-Null
-}
+# Explorer Settings
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "Start_Mode" -valueType DWORD -value 1 -successMsg "Explorer set to open to This PC." -alreadyAppliedMsg "Explorer already opens to This PC."
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShowRecentlyUsedFiles" -valueType DWORD -value 0 -successMsg "Disabled showing recently used files in Explorer." -alreadyAppliedMsg "Already disabled showing recently used files."
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShowFrequentFolders" -valueType DWORD -value 0 -successMsg "Disabled showing frequently used folders in Explorer." -alreadyAppliedMsg "Already disabled showing frequently used folders."
 
-# Function to output status with color
-function Write-Status {
-    param (
-        [string]$Message,
-        [string]$Status,
-        [string]$Color
-    )
-    Write-Host -NoNewline $Message
-    Write-Host " $Status" -ForegroundColor $Color
-}
+# Personalization - Light theme & accent color
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "AppsUseLightTheme" -valueType DWORD -value 1 -successMsg "Light theme applied." -alreadyAppliedMsg "Light theme already applied."
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "SystemUsesLightTheme" -valueType DWORD -value 1 -successMsg "Light theme applied." -alreadyAppliedMsg "Light theme already applied."
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "EnableAutomaticAccentColor" -valueType DWORD -value 1 -successMsg "Automatic accent color enabled." -alreadyAppliedMsg "Automatic accent color already enabled."
 
-# Prompt for confirmation before executing the script again
-if (Check-ScriptRun) {
-    $confirmation = Read-Host "The script has already been run once. Running it again will make changes to your system settings. Do you want to continue? (Y/N)"
-    if ($confirmation -ne "Y") {
-        Write-Host "Script execution aborted."
-        exit
-    }
-}
+# Personalization - Enable title bars & borders, desktop icons
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShellBrowserWindowBorders" -valueType DWORD -value 1 -successMsg "Enabled title bars and window borders." -alreadyAppliedMsg "Title bars and window borders already enabled."
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "HideIcons" -valueType DWORD -value 0 -successMsg "Enabled desktop icons." -alreadyAppliedMsg "Desktop icons already enabled."
 
-# Function to check if a registry value exists and matches a given data
-function Test-RegistryValue {
-    param (
-        [string]$Path,
-        [string]$Name,
-        [string]$ExpectedValue
-    )
-    $value = Get-ItemProperty -Path $Path -Name $Name -ErrorAction SilentlyContinue
-    if ($value -ne $null -and $value.$Name -eq $ExpectedValue) {
-        return $true
-    }
-    return $false
-}
+# Taskbar settings
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskbar" -name "GroupBy" -valueType DWORD -value 2 -successMsg "Taskbar buttons will combine when full." -alreadyAppliedMsg "Taskbar buttons already combine when full."
 
-# Function to enable desktop icons
-function Enable-DesktopIcons {
-    $shell = New-Object -ComObject shell.application
-    $folder = $shell.Namespace('Desktop')
-    $folderItem = $folder.Self
-    $folderItem.InvokeVerb('Show')
-}
+# Start Menu settings
+Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "Start_ShowAllSubItems" -valueType DWORD -value 1 -successMsg "Enabled showing all folders in Start menu." -alreadyAppliedMsg "Start menu already shows all folders."
 
-# Function to restart Explorer process
-function Restart-Explorer {
-    Stop-Process -Name explorer -Force
-    Start-Process explorer
-}
+# Time zone settings
+Set-TimeZone -Id "India Standard Time"  # Time zone +5:30
+wmic time set format "h:mm tt"  # Time format AM/PM
 
-# Function to set Explorer settings
-function Set-ExplorerSettings {
-    # Open default Explorer to This PC
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1
+# Attempt Explorer restart (informational message)
+Restart-Process explorer.exe -ErrorAction SilentlyContinue
+Write-Host "Explorer restarted (may require logoff/logon for full effect)."
 
-    # Disable showing recently used files in Quick access
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowRecent" -Value 0
-
-    # Disable showing frequently used folders in Quick access
-    Set-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowFrequent" -Value 0
-}
-
-# Set Explorer settings
-Set-ExplorerSettings
-
-# Check and change color mode to light if needed (for Windows 10 and 11)
-$colorModePath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-$colorModeValue = "AppsUseLightTheme"
-$colorModeExpectedValue = 1
-$colorModeStatus = Test-RegistryValue -Path $colorModePath -Name $colorModeValue -ExpectedValue $colorModeExpectedValue
-
-# Check and change accent color to automatic if needed (for Windows 10 and 11)
-$accentColorPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize"
-$accentColorValue = "SystemUsesLightTheme"
-$accentColorExpectedValue = 1
-$accentColorStatus = Test-RegistryValue -Path $accentColorPath -Name $accentColorValue -ExpectedValue $accentColorExpectedValue
-
-# Check and enable accent color on title bars & window borders if needed (for Windows 10 and 11)
-$dwmPath = "HKCU:\SOFTWARE\Microsoft\Windows\DWM"
-$dwmValue = "ColorPrevalence"
-$dwmExpectedValue = 1
-$dwmStatus = Test-RegistryValue -Path $dwmPath -Name $dwmValue -ExpectedValue $dwmExpectedValue
-
-# Check and enable all desktop icons if needed (for Windows 10 and 11)
-$desktopIconsPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
-$desktopIconsValue = "HideIcons"
-$desktopIconsExpectedValue = 0
-$desktopIconsStatus = Test-RegistryValue -Path $desktopIconsPath -Name $desktopIconsValue -ExpectedValue $desktopIconsExpectedValue
-if (-not $desktopIconsStatus) {
-    Enable-DesktopIcons
-}
-
-# Check and combine taskbar buttons when taskbar is full if needed (for Windows 10 and 11)
-$taskbarPath = "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
-$taskbarValue = "TaskbarGlomming"
-$taskbarExpectedValue = 1
-$taskbarStatus = Test-RegistryValue -Path $taskbarPath -Name $taskbarValue -ExpectedValue $taskbarExpectedValue
-
-# Restart Explorer to apply changes
-Restart-Explorer
-
-# Output verification
-Write-Host "Settings verification:"
-
-Write-Status "Color mode: Light" "Enabled" "Green"
-Write-Status "Accent color: Automatic" "Enabled" "Green"
-Write-Status "Accent color on title bars & window borders: Enabled" "Enabled" "Green"
-Write-Status "All desktop icons: Enabled" "Enabled" "Green"
-Write-Status "Combine taskbar buttons when taskbar is full: Enabled" "Enabled" "Green"
-
-Write-Host "Explorer settings applied."
-
-# Set the flag indicating that the script has been run
-Set-ScriptRun
+Write-Host "Script execution complete."
