@@ -7,7 +7,7 @@ function Set-SmartSetting ($keyPath, $name, $valueType, $value, $successMsg) {
   if ($currentValue -eq $value) {
     Write-Host "$name setting already applied."
   } else {
-    RegAddKey -Path $keyPath -Name $name -Value $value -Type $valueType
+    RegAddKey -Path $keyPath -Name $name -Value $value -Type $valueType -ErrorAction Write-Error
     Write-Host $successMsg
   }
 }
