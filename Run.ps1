@@ -1,43 +1,51 @@
-# Error handling for informative messages
-$ErrorActionPreference = Write-Error
+# Change Windows settings
 
-# Function to check and apply setting with restart prompt after all changes
-function Set-SmartSetting ($keyPath, $name, $valueType, $value, $successMsg) {
-  $currentValue = Get-ItemProperty -Path $keyPath -Name $name -ErrorAction SilentlyContinue
-  if ($currentValue -eq $value) {
-    Write-Host "$name setting already applied."
-  } else {
-    RegAddKey -Path $keyPath -Name $name -Value $value -Type $valueType -ErrorAction Write-Error
-    Write-Host $successMsg
-  }
-}
+# Open default explorer to This PC
+# Reference: https://superuser.com/a/1016949
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
 
-# Explorer Settings (combined)
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "Start_Mode" -valueType DWORD -value 1 -successMsg "Explorer set to open to This PC and hide recently used files & folders."
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShowRecentlyUsedFiles" -valueType DWORD -value 0
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShowFrequentFolders" -valueType DWORD -value 0
+# Disable show recently used files & show frequently used folders
+# Reference: https://superuser.com/a/1117295
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f
 
-# Personalization (combined)
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "AppsUseLightTheme" -valueType DWORD -value 1 -successMsg "Light theme applied with automatic accent color."
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "SystemUsesLightTheme" -valueType DWORD -value 1
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -name "EnableAutomaticAccentColor" -valueType DWORD -value 1
+# Change color to Light in personalization
+# Reference: https://superuser.com/a/1097611
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f
 
-# Personalization - Enable title bars & borders, desktop icons
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "ShellBrowserWindowBorders" -valueType DWORD -value 1 -successMsg "Enabled title bars, window borders, and desktop icons."
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "HideIcons" -valueType DWORD -value 0
+# Enable automatically pick an accent color from my background
+# Reference: https://www.windowscentral.com/how-enable-windows-10-dark-mode
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f
 
-# Taskbar settings
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Taskbar" -name "GroupBy" -valueType DWORD -value 2 -successMsg "Taskbar buttons will combine when full."
+# Enable title bars & window borders
+# Reference: https://www.windowscentral.com/how-enable-windows-10-dark-mode
+reg add "HKCU\Control Panel\Colors" /v TitleText /t REG_SZ /d "0 0 0" /f
 
-# Start Menu settings
-Set-SmartSetting -keyPath "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -name "Start_ShowAllSubItems" -valueType DWORD -value 1 -successMsg "Enabled showing all folders in Start menu."
+# Enable desktop icons: Computer, User's Files, Network, Recycle Bin, Control Panel
+# Reference: https://superuser.com/a/1557199
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v {20D04FE0-3AEA-1069-A2D8-08002B30309D} /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v {59031a47-3f72-44a7-89c5-5595fe6b30ee} /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v {F02C1A0D-BE21-4350-88B0-7367FC96EF3C} /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v {645FF040-5081-101B-9F08-00AA002F954E} /t REG_DWORD /d 0 /f
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v {5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0} /t REG_DWORD /d 0 /f
 
-# Time zone settings
-Set-TimeZone -Id "India Standard Time"  # Time zone +5:30
-wmic time set format "h:mm tt"  # Time format AM/PM
+# Enable all folders to appear on start
+# Reference: https://superuser.com/a/949204
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v StartMenuInit /t REG_DWORD /d 1 /f
 
-# Attempt Explorer restart (informational message after all changes)
-Restart-Process explorer.exe -ErrorAction Write-Error
-Write-Host "Explorer restarted (may require logoff/logon for full effect)."
+# Combine taskbar buttons when taskbar is full
+# Reference: https://superuser.com/a/1202845
+reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarGlomming /t REG_DWORD /d 1 /f
 
-Write-Host "Script execution complete."
+# Change time zone to +5:30 & format to AM & PM
+# Reference: https://superuser.com/a/1403578
+tzutil /s "India Standard Time"
+reg add "HKCU\Control Panel\International" /v sTimeFormat /t REG_SZ /d "h:mm tt" /f
+
+# Attempt to restart explorer after all changes are made to apply changes
+# Reference: https://superuser.com/a/1003549
+Stop-Process -Name explorer -Force
+
+# Confirmation output
+Write-Host "Windows settings have been successfully updated."
+
