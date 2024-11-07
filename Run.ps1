@@ -1,54 +1,34 @@
-# Change Windows settings
-
-# Open default explorer to This PC
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v LaunchTo /t REG_DWORD /d 1 /f
-Write-Host "Default explorer changed to This PC."
-
-# Disable show recently used files & show frequently used folders
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackDocs /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v Start_TrackProgs /t REG_DWORD /d 0 /f
-Write-Host "Disabled showing recently used files and frequently used folders."
-
-# Change color to Light in personalization
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemUsesLightTheme /t REG_DWORD /d 1 /f
-Write-Host "Changed personalization color to Light."
-
-# Enable automatically pick an accent color from my background
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" /v SystemAccentColorAuto /t REG_DWORD /d 1 /f
-Write-Host "Enabled automatically picking an accent color from the background."
-
-# Enable title bars & window borders
-reg add "HKCU\SOFTWARE\Microsoft\Windows\DWM" /v ColorPrevalence /t REG_DWORD /d 1 /f
-Write-Host "Enabled title bars and window borders."
-
-# Enable desktop icons: Computer, User's Files, Network, Recycle Bin, Control Panel
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "{B4FB3F98-C1EA-428d-A78A-D1F5659CBA93}" /t REG_DWORD /d 0 /f
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel" /v "{5399E694-6CE5-4D6C-8FCE-1D8870FDCBA0}" /t REG_DWORD /d 0 /f
-Write-Host "Enabled desktop icons: Computer, User's Files, Network, Recycle Bin, Control Panel."
-
-# Enable all folders to appear on start
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v StartMenuInit /t REG_DWORD /d 1 /f
-Write-Host "Enabled all folders to appear on start."
-
-# Combine taskbar buttons when taskbar is full
-reg add "HKCU\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" /v TaskbarGlomming /t REG_DWORD /d 1 /f
-Write-Host "Combined taskbar buttons when taskbar is full."
-
-# Change time zone to +5:30 & format to AM & PM
+# Set Date & Time to +5:30 (Indian Standard Time)
 tzutil /s "India Standard Time"
-reg add "HKCU\Control Panel\International" /v sTimeFormat /t REG_SZ /d "h:mm tt" /f
-Write-Host "Changed time zone to +5:30 and format to AM & PM."
 
-# Attempt to restart explorer after all changes are made to apply changes
-# Check if Explorer is running
-if (Get-Process -Name explorer -ErrorAction SilentlyContinue) {
-    Stop-Process -Name explorer -Force
-    Start-Sleep -Seconds 2
-    Start-Process explorer
-}
+# Set Theme to Light
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "SystemUsesLightTheme" -Value 1 -PropertyType DWORD -Force
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize" -Name "AppsUseLightTheme" -Value 1 -PropertyType DWORD -Force
 
-# Confirmation output
-Write-Host "Windows settings have been successfully updated."
+# Set Lock Screen to Windows Spotlight (this part may need to be done manually)
+# Note: No direct PowerShell command to apply Windows Spotlight to desktop wallpaper, only lock screen.
+# Navigate to Settings > Personalization > Lock screen > Background: Select "Windows Spotlight" manually.
+
+# Enable All Desktop Icons (Computer, Network, User Files, Recycle Bin)
+$regPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\HideDesktopIcons\NewStartPanel"
+Set-ItemProperty -Path $regPath -Name "{20D04FE0-3AEA-1069-A2D8-08002B30309D}" -Value 0  # This PC
+Set-ItemProperty -Path $regPath -Name "{F02C1A0D-BE21-4350-88B0-7367FC96EF3C}" -Value 0  # Network
+Set-ItemProperty -Path $regPath -Name "{59031a47-3f72-44a7-89c5-5595fe6b30ee}" -Value 0  # User Files
+Set-ItemProperty -Path $regPath -Name "{645FF040-5081-101B-9F08-00AA002F954E}" -Value 0  # Recycle Bin
+
+# Taskbar: Only Show Search Icon
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Value 1 -PropertyType DWORD -Force
+
+# News & Interests set to Full view (has to be done manually)
+# Right-click the Taskbar > News and Interests > Show icon and text (manual setting)
+
+# Set File Explorer to open to "This PC" by default
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "LaunchTo" -Value 1 -PropertyType DWORD -Force
+
+# Disable Quick Access in File Explorer (disable Frequent and Recent files)
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowFrequent" -Value 0 -PropertyType DWORD -Force
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowRecent" -Value 0 -PropertyType DWORD -Force
+
+# Refresh Explorer to apply changes
+Stop-Process -Name explorer -Force
+Start-Process explorer
